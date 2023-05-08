@@ -26,13 +26,13 @@ public struct AntState: ISimulationAgentState
         float orientation, 
         float speed, 
         float totalFoodCarried,
-        float sensoryFieldAngle = 140f,
-        int sensoryFieldRadius = 100
+        float sensoryFieldAngle = 120f,
+        int sensoryFieldRadius = 120
     ) {
-        this.BaseState = new BaseSimulationAgentState(x, y, sensoryFieldAngle, sensoryFieldRadius, orientation);
-        this.Speed = speed;
-        this.TotalFoodCarried = totalFoodCarried;
-        this.SensoryFieldAngelRadHalved = sensoryFieldAngle * (float) Math.PI / 180f / 2f;
+        BaseState = new BaseSimulationAgentState(x, y, sensoryFieldAngle, sensoryFieldRadius, orientation);
+        Speed = speed;
+        TotalFoodCarried = totalFoodCarried;
+        SensoryFieldAngelRadHalved = sensoryFieldAngle * (float) Math.PI / 180f / 2f;
     }
     
     public AntState WithData(
@@ -45,13 +45,13 @@ public struct AntState: ISimulationAgentState
         int? sensoryFieldRadius = null
     ) {
         return new AntState(
-            x ?? this.X, 
-            y ?? this.Y, 
-            orientation ?? this.Orientation, 
-            speed ?? this.Speed, 
-            totalFoodCarried ?? this.TotalFoodCarried,
-            sensoryFieldAngle ?? this.SensoryFieldAngle,
-            sensoryFieldRadius ?? this.SensoryFieldRadius
+            x ?? X, 
+            y ?? Y, 
+            orientation ?? Orientation, 
+            speed ?? Speed, 
+            totalFoodCarried ?? TotalFoodCarried,
+            sensoryFieldAngle ?? SensoryFieldAngle,
+            sensoryFieldRadius ?? SensoryFieldRadius
         );
     }
 

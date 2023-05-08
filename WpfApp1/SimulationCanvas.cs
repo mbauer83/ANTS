@@ -1,22 +1,43 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
 namespace WpfApp1
 {
+    public class ResourceDepletedEventArgs : EventArgs
+    {
+        public string Key { get; }
+        public ResourceDepletedEventArgs(string key)
+        {
+            Key = key;
+        }
+    }
+    
     public class SimulationCanvas : Canvas
     {
+        public EventHandler<ResourceDepletedEventArgs> ResourceDepleted;
+        
+        private ConcurrentQueue<string> _deleteResourceQueue = new ConcurrentQueue<string>();
+
         private readonly Dictionary<string, UIElement> _elements = new Dictionary<string, UIElement>();
 
+        private Dictionary<Color, SolidColorBrush> _brushes = new Dictionary<Color, SolidColorBrush>();
         public SimulationCanvas(int width, int height)
         {
             Background = Brushes.White;
             // set size
             Width = width;
             Height = height;
+        }
+
+        public void OnResourceDepleted(object sender, ResourceDepletedEventArgs e)
+        {
+            _deleteResourceQueue.Enqueue(e.Key);
         }
 
         public void AddElement(string name, UIElement element)
@@ -68,23 +89,30 @@ namespace WpfApp1
             var yAdd = 0;//-Math.Sin(orientation) * 5;
             SetLeft(antShape, position.X + xAdd);
             SetTop(antShape, position.Y + yAdd);
+            //SetZIndex(antShape, 2);
             AddElement(key, antShape);
         }
 
+        private SolidColorBrush GetBrush(Color color)
+        {
+            // If brush exists in dictionary, return it.
+            if (_brushes.TryGetValue(color, out var brush))
+            {
+                return brush;
+            }
+            // else construct it, place it in the dictionary and return it.
+            brush = new SolidColorBrush(color);
+            _brushes.Add(color, brush);
+            return brush;
+        }
+        
         public void DrawFood(string key, Point position, float value)
         {
-            // Light green to dark green from 0 to 1
-            var lightGreenRgb = new byte[] { 144, 238, 144 };
-            var darkGreenRgb = new byte[] { 0, 100, 0 };
-            var color = Color.FromRgb(
-                (byte)(lightGreenRgb[0] + (darkGreenRgb[0] - lightGreenRgb[0]) * value),
-                (byte)(lightGreenRgb[1] + (darkGreenRgb[1] - lightGreenRgb[1]) * value),
-                (byte)(lightGreenRgb[2] + (darkGreenRgb[2] - lightGreenRgb[2]) * value)
-            );
+            var color = GetShadeOfBrown(value);
             if (_elements.TryGetValue(key, out var element))
             {
                 var el = element as Ellipse;
-                el.Fill = new SolidColorBrush(color);
+                el.Fill = GetBrush(color);
             }
             else
             {
@@ -92,7 +120,7 @@ namespace WpfApp1
                 {
                     Width = 4,
                     Height = 4,
-                    Fill = new SolidColorBrush(color)
+                    Fill = GetBrush(color)
                 };
                 SetLeft(foodShape, position.X);
                 SetTop(foodShape, position.Y);
@@ -143,7 +171,7 @@ namespace WpfApp1
             Path path = new Path();
             path.Data = pathGeometry;
             path.Fill = Brushes.LightBlue;
-            path.Opacity = 0.25;
+            path.Opacity = 0.15;
 
             // Create the transform group and add the rotation transform
             TransformGroup transformGroup = new TransformGroup();
@@ -179,21 +207,30 @@ namespace WpfApp1
                 AddElement(key, homeShape);
             }
         }
+        
+        public void RemoveResourcesToBeDeleted()
+        {
+           // Go through concurrent queue and delete
+              while (_deleteResourceQueue.TryDequeue(out var key))
+              {
+                RemoveElement(key);
+              }
+        }
 
         public void DrawPheromone(string type, string key, Point position, float value)
         {
             // scaled value is transformed to asymptotically approach 1
-            var scaledValue = Math.Max((float)(1 - 1 / (1 + value)), 0.1f);
+            //var scaledValue = Math.Max((float)(1 - 1 / (1 + value)), 0.1f);
 
             // if type is "pheromone", color in blue, otherwise in red
             var color = type == "pheromone-r"
-                ? Color.FromRgb((byte)(255 * scaledValue), (byte)(255 * scaledValue), 255)
-                : Color.FromRgb(255, (byte)(255 * scaledValue), (byte)(255 * scaledValue));
-            
+                ? GetShadeOfPurple(value)
+                : GetShadeOfOrange(value);
+
             if (_elements.TryGetValue(key, out var element))
             {
                 var el = element as Ellipse;
-                el.Fill = new SolidColorBrush(color);
+                el.Fill = GetBrush(color);
             }
             else
             {
@@ -205,13 +242,61 @@ namespace WpfApp1
                 {
                     Width = 4,
                     Height = 4,
-                    Fill = new SolidColorBrush(color),
+                    Fill = GetBrush(color),
                 };
                 SetLeft(pheromoneShape, position.X);
                 SetTop(pheromoneShape, position.Y);
+                //SetZIndex(pheromoneShape, -1);
 
                 AddElement(key, pheromoneShape);
             }
+        }
+
+        private static Color GenerateShade(Color color, float intensityChange)
+        {
+            intensityChange = MathF.Max(-1f, MathF.Min(1f, intensityChange));
+            float r = color.R;
+            float g = color.G;
+            float b = color.B;
+            
+            // an intensityChange of -1 will return white
+            // an intensityChange of 1 will return a fully saturated color
+            if (intensityChange < 0)
+            {
+                intensityChange += 1f;
+                r = (int)(255 - (255 - r) * intensityChange);
+                g = (int)(255 - (255 - g) * intensityChange);
+                b = (int)(255 - (255 - b) * intensityChange);
+            }
+            else
+            {
+                r = (int)(r * (1 - intensityChange));
+                g = (int)(g * (1 - intensityChange));
+                b = (int)(b * (1 - intensityChange));
+            }
+
+            return Color.FromRgb((byte)r, (byte)g, (byte)b);
+        }
+        
+        private static Color GetShadeOfBrown(float intensity)
+        {
+            // logarithmically map intensity (0f to inf) to between -1f and 0f
+            var logValue = (float)Math.Log(intensity * 5 + 1f) - 1f;
+            return GenerateShade(Colors.SaddleBrown, logValue);
+        }
+
+        private static Color GetShadeOfOrange(float intensity)
+        {
+            // logarithmically map intensity (0f to inf) to between -1f and 0f
+            var logValue = (float)Math.Log(intensity * 5 + 1f) - 1f;
+            return GenerateShade(Colors.Orange, logValue);
+        }
+
+        private static Color GetShadeOfPurple(float intensity)
+        {
+            // logarithmically map intensity (0f to inf) to between -1f and 0f
+            var logValue = (float)Math.Log(intensity * 5 + 1f) - 1f;
+            return GenerateShade(Colors.Purple, logValue);
         }
     }
 }

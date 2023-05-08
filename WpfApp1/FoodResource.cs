@@ -17,12 +17,12 @@ public class FoodResource: ISimulationResource, SimulationObjectMixin
     
     public FoodResource(float x, float y, float amount, float decayRate)
     {
-        this.Type = "food";
-        this.X = x;
-        this.Y = y;
-        this.Amount = amount;
-        this.DecayRate = decayRate;
-        this.Key = SimulationObjectMixin.KeyFor(Type, X, Y);
+        Type = "food";
+        X = x;
+        Y = y;
+        Amount = amount;
+        DecayRate = decayRate;
+        Key = SimulationObjectMixin.KeyFor(Type, X, Y);
     }
 
     public (IOption<ISimulationResource>, IOption<ISimulationResource>) Split(float firstPartAmount)
@@ -31,7 +31,7 @@ public class FoodResource: ISimulationResource, SimulationObjectMixin
         {
             return new FoodResource(X, Y, am.Amount, DecayRate);
         }
-        var splittableAmount = new SplittableAmount(this.Amount);
+        var splittableAmount = new SplittableAmount(Amount);
         var split = splittableAmount.Split(firstPartAmount);
         var mappedItem1 = split.Item1.Map(MapToFoodResource) as IOption<ISimulationResource>;
         var mappedItem2 = split.Item2.Map(MapToFoodResource) as IOption<ISimulationResource>;

@@ -11,10 +11,10 @@ public struct ResourceAccessRequest<T> where T: ISimulationAgentState
     
     public ResourceAccessRequest(string type, float x, float y, float amount, ISimulationAgent<T> agent)
     {
-        this.Type = type;
-        this.X = x;
-        this.Y = y;
-        this.Amount = amount;
-        this.Agent = agent;
+        Type = type;
+        X = x;
+        Y = y;
+        Amount = amount;
+        Agent = agent;
     }
 }

@@ -9,7 +9,7 @@ public readonly struct SplittableAmount
     
     public SplittableAmount(float amount)
     {
-        this.Amount = amount;
+        Amount = amount;
     }
     
     public (IOption<SplittableAmount>, IOption<SplittableAmount>) Split(float firstPartAmount)

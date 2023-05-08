@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,12 +26,12 @@ namespace WpfApp1
             InitializeComponent();
             var width = 1000;
             var height = 600;
-            var foodDecayRate = 0.015f;
+            var foodDecayRate = 0.02f;
 
             // Cluster food around the middle of the right half of the canvas
             var foodClusterX = (int)(width * 0.75f);
             var foodClusterY = (int)(height * 0.5f);
-            var resourcesDict = new Dictionary<string, ISimulationResource>();
+            var resourcesDict = new ConcurrentDictionary<string, ISimulationResource>();
             var random = new Random();
             for (var i = 0; i < 400; i++)
             {
@@ -48,7 +49,7 @@ namespace WpfApp1
                 }
                 else
                 {
-                    resourcesDict.Add(key, food);
+                    resourcesDict.TryAdd(key, food);
                 }
             }
 
@@ -77,6 +78,9 @@ namespace WpfApp1
                 agents,
                 canvas
             );
+            
+            // Attach SimulationArena::OnLeftMouseUp as left mouse up event handler
+            canvas.MouseMove += arena.OnMouseMove;
             
             // Start the simulation
             arena.RunGameLoop();

@@ -26,6 +26,11 @@ public class Some<T>: IOption<T>
     {
         return Value;
     }
+    
+    public T GetOrElse(T defaultValue)
+    {
+        return Value;
+    }
 
     public IMonad<T1> Map<T1>(Func<T, T1> f)
     {
@@ -41,11 +46,6 @@ public class Some<T>: IOption<T>
 
         return new None<T1>();
     }
-    
-    //public static IOption<T> Pure(T value)
-    //{
-    //    return new Some<T>(value);
-    //}
 
     public IMonad<T1> Pure<T1>(T1 value)
     {
@@ -57,14 +57,14 @@ public class Some<T>: IOption<T>
         return f(Value);
     }
     
-    public void Match(Action<T> some, Action none)
+    public void Match<T1>(Action<(T, T1)> some, Action<T1> none, T1 context)
     {
-        some(Value);
+        some((Value, context));
     }
 
-    public T1 MatchReturn<T1>(Func<T, T1> some, Func<T1> none)
+    public T1 MatchReturn<T1, T2>(Func<(T, T2), T1> some, Func<T2, T1> none, T2 context)
     {
-        return some(Value);
+        return some((Value, context));
     }
-    
+
 }
