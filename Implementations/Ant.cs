@@ -18,14 +18,12 @@ public class Ant: ISimulationAgent<AntState>
     private const int DepositPheromoneAfterSteps = 4;
     private const int StepsWithoutEventBeforeReset = 750;
     private const int InitialIgnorePheromonesForSteps = 50;
+    private const float TwoPi = (float) (2 * Math.PI);
 
     public string Id { get; }
     public AntState State { get; private set; }
     
     private Mode _mode = Mode.Forage;
-    
-    private const float TwoPi = (float) (2 * Math.PI);
-    
     private bool _hasUnresolvedResourceAccessRequest;
     private int _randomStepsSinceLastTurn = 1;
     private readonly int _turnAfterRandomSteps = 80;
