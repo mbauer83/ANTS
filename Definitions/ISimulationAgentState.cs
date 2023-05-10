@@ -1,4 +1,4 @@
-namespace AntColonySimulation.definitions;
+namespace AntColonySimulation.Definitions;
 
 public interface ISimulationAgentState
 {

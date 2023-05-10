@@ -1,11 +1,11 @@
 using System;
 using System.Windows;
-using AntColonySimulation.definitions;
-using AntColonySimulation.utils.fn;
+using AntColonySimulation.Definitions;
+using AntColonySimulation.Utils.Functional;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
-public class PheromoneResourceReturn: ISimulationResource, SimulationObjectMixin
+public class PheromoneResource: ISimulationResource, SimulationObjectMixin
 {
     public string Type { get; }
     public float X { get; private set; }
@@ -33,9 +33,9 @@ public class PheromoneResourceReturn: ISimulationResource, SimulationObjectMixin
     
     public IOption<string> LockedByAgentId { get; set; } = new None<string>();
     
-    public PheromoneResourceReturn(Point pos, float amount, float decayRate)
+    public PheromoneResource(Point pos, float amount, float decayRate)
     {
-        Type = "pheromone-r";
+        Type = "pheromone";
         Position = pos;
         X = (float)pos.X;
         Y = (float)pos.Y;
@@ -48,7 +48,7 @@ public class PheromoneResourceReturn: ISimulationResource, SimulationObjectMixin
     {
         ISimulationResource MapToPheromoneResource(SplittableAmount am)
         {
-            return new PheromoneResourceReturn(Position, am.Amount, DecayRate);
+            return new PheromoneResource(Position, am.Amount, DecayRate);
         }
         var splittableAmount = new SplittableAmount(Amount);
         var split = splittableAmount.Split(firstPartAmount);
@@ -59,18 +59,18 @@ public class PheromoneResourceReturn: ISimulationResource, SimulationObjectMixin
 
     public ISimulationResource WithAmount(float amount)
     {
-        return new PheromoneResourceReturn(Position, amount, DecayRate);
+        return new PheromoneResource(Position, amount, DecayRate);
     }
     
     public ISimulationResource Decayed(float deltaTime, float decayRateModifier = 1f)
     {
         var newAmount = Amount * (1f - DecayRate * decayRateModifier * deltaTime);
-        return new PheromoneResourceReturn(Position, newAmount, DecayRate);
+        return new PheromoneResource(Position, newAmount, DecayRate);
     }
     
     public void Decay(float deltaTime, float decayRateModifier = 1f)
     {
-        var evaporationRate = DecayRate * decayRateModifier * MathF.Pow(1- Amount, 2);
+        var evaporationRate = DecayRate * decayRateModifier;//MathF.Pow(1- Amount, 2);
         var newAmount = Amount * MathF.Pow(1 - evaporationRate, deltaTime);
         //var newAmount = Amount * (1f - DecayRate * decayRateModifier * deltaTime);
         Amount = newAmount;

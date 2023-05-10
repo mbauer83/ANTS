@@ -3,11 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace AntColonySimulation.implementations
+namespace AntColonySimulation.Implementations
 {
     public class ResourceDepletedEventArgs : EventArgs
     {
@@ -22,7 +21,7 @@ namespace AntColonySimulation.implementations
     {
         public EventHandler<ResourceDepletedEventArgs>? ResourceDepleted;
         
-        private ConcurrentQueue<string> _deleteResourceQueue = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<string> _deleteResourceQueue = new ConcurrentQueue<string>();
 
         private readonly Dictionary<string, UIElement> _elements = new Dictionary<string, UIElement>();
 
@@ -83,10 +82,9 @@ namespace AntColonySimulation.implementations
                 Height = 10,
                 RenderTransform = new RotateTransform((orientation * 180/Math.PI) % 360, 5, 5)
             };
-            var xAdd = 0;//-Math.Cos(orientation) * 5;
-            var yAdd = 0;//-Math.Sin(orientation) * 5;
-            SetLeft(antShape, position.X + xAdd);
-            SetTop(antShape, position.Y + yAdd);
+            SetLeft(antShape, position.X);
+            SetTop(antShape, position.Y);
+            // Z-index causes significant performance degradation
             //SetZIndex(antShape, 2);
             AddElement(key, antShape);
         }
@@ -252,7 +250,7 @@ namespace AntColonySimulation.implementations
 
         private static Color GenerateShade(Color color, float intensityChange)
         {
-            intensityChange = MathF.Max(-1f, MathF.Min(1f, intensityChange));
+            intensityChange = MathF.Max(-0.9f, MathF.Min(0.9f, intensityChange));
             float r = color.R;
             float g = color.G;
             float b = color.B;

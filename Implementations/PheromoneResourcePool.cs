@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Windows;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public class PheromoneResourcePool
 {

@@ -2,33 +2,30 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
-using AntColonySimulation.definitions;
-using AntColonySimulation.utils.fn;
-using AntColonySimulation.utils.geometry;
+using AntColonySimulation.Definitions;
+using AntColonySimulation.Utils.Geometry;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgentState
 {
     public int Width { get; }
     public int Height { get; }
-    private readonly ConcurrentDictionary<string, ISimulationResource> _resources;
-    private readonly ConcurrentQueue<IResourceAccessRequest<T>> _resourceAccessRequests;
-    private readonly List<ISimulationAgent<T>> _agents;
-    private bool _run;
-    private readonly SimulationCanvas _canvas;
     public Point Home { get; }
+    public ConcurrentDictionary<string, ISimulationResource> Resources { get; }
+    private readonly List<ISimulationAgent<T>> _agents;
+    private readonly SimulationCanvas _canvas;
     private readonly PheromoneResourcePool _pheromoneResourcePool;
     private readonly PheromoneResourceReturnPool _pheromoneResourceReturnPool;
 
-    public void Stop()
+    private bool _run;
+    public void TogglePause()
     {
-        _run = false;
+        _run = !_run;
     }
 
     public SimulationArena(
@@ -43,9 +40,8 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     {
         Width = width;
         Height = height;
-        _resources = resources;
+        Resources = resources;
         _agents = agents;
-        _resourceAccessRequests = new ConcurrentQueue<IResourceAccessRequest<T>>();
         _canvas = canvas;
         Home = new Point(width / 4f, height / 2f);
         ResourceDepleted += _canvas.OnResourceDepleted;
@@ -60,7 +56,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         float? exclusiveUpperLimit = null
     ) {
         var list = new List<(ISimulationResource, float, float)>();
-        foreach (var res in _resources)
+        foreach (var res in Resources)
         {
             if (res.Value.Type == resourceType &&
                 res.Value.Amount > exclusiveLowerLimit &&
@@ -101,64 +97,12 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         return list;
     }
 
-    public void AddResourceAccessRequest(IResourceAccessRequest<T> req)
-    {
-        _resourceAccessRequests.Enqueue(req);
-    }
-    
-    public void ProcessResourceAccessRequest(IResourceAccessRequest<T> req)
-    {
-        // If resource does not exist or is locked, then resolve request with None
-        var key = SimulationObjectMixin.KeyFor(req.Type, req.X, req.Y);
-        _resources.TryGetValue(key, out var res);
-        var maybeResource = IOption<ISimulationResource>.FromNullable(res);
-        maybeResource.Match(
-            t =>
-            {
-                var resource = t.Item1;
-                var request = t.Item2.Item1;
-                var localKey = t.Item2.Item2;
-                if (resource.LockedByAgentId.IsSome() && resource.LockedByAgentId.Get() != request.Agent.Id)
-                {
-                    request.Agent.SolveResourceAccessRequest(new None<ISimulationResource>());
-                    return;
-                }
-                // Otherwise split the resource, set the right result in the dictionary
-                // and resolve the request with the left result
-                var (left, right) = resource.Split(request.Amount);
-                if (right is Some<ISimulationResource> rightSome)
-                {
-                    _resources.TryUpdate(localKey, rightSome.Value, resource);
-                }
-                else
-                {
-                    _resources.TryRemove(localKey, out _);
-                    RaiseResourceDepletedEvent(localKey);
-                }
-                request.Agent.SolveResourceAccessRequest(left);
-                
-            },
-            (_) => {},
-            (req, key)
-        );
-    }
-
     public bool WithinBounds(float x, float y)
     {
         var buffer = 5f;
         return x >= buffer && x <= (Width - buffer) && y >= buffer && y <= (Height - buffer);
     }
 
-    //private void UpdateAgents(List<ISimulationAgent<T>> agents, float deltaTime)
-    //{
-    //    AgentUpdateContext<T> ctx = new(this, deltaTime);
-//
-    //    Parallel.ForEach(agents, agent =>
-    //    {
-    //        agent.Act(this, deltaTime);
-    //    });
-    //}
-    
     private async Task UpdateAgents(List<ISimulationAgent<T>> agents, float deltaTime)
     {
         //List<Task> tasks = new List<Task>();
@@ -171,7 +115,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
                 agent.Act(this, deltaTime);
             });
         };
-//
+
         async Task AwaitPartition(IEnumerator<ISimulationAgent<T>> partition)
         {
             using (partition)
@@ -191,7 +135,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
                 .Select(AwaitPartition)
         );
         
-//
+
         //foreach (var agent in agents)
         //{
         //    AgentTaskComponents<T> components = new(agent, ctx);
@@ -203,43 +147,20 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         //                var localDeltaTime = agentUpdateContext.DeltaTime;
         //                localAgent.Act(localArena, ref localDeltaTime);
         //            }
-//
+
         //            return Task.CompletedTask;
         //        }, components, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
         //        .Unwrap();
         //    tasks.Add(t);
         //}
-//
+
         //await Task.WhenAll(tasks);
-    }
-
-    private async Task ProcessResourceAccessRequests()
-    {
-        List<Task> tasks = new List<Task>();
-        
-        while (_resourceAccessRequests.TryDequeue(out var req))
-        {
-            ResourceAccessRequestTaskComponents<T> components = new(this, req);
-            var t = Task.Factory.StartNew(state =>
-                {
-                    if (state is ResourceAccessRequestTaskComponents<T>(var localArena, var localRequest))
-                    {
-                        localArena.ProcessResourceAccessRequest(localRequest);
-                    }
-
-                    return Task.CompletedTask;
-                }, components, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
-                .Unwrap();
-            tasks.Add(t);
-        }
-
-        await Task.WhenAll(tasks);
     }
 
     //private void DecayResources(float deltaTime)
     //{
     //    var keysToRemove = new List<string>();
-//
+
     //    foreach (var res in _resources)
     //    {
     //        res.Value.Decay(deltaTime);
@@ -248,7 +169,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     //            keysToRemove.Add(res.Key);
     //        }
     //    }
-//
+
     //    foreach (var key in keysToRemove)
     //    {
     //        if (!_resources.TryRemove(key, out var res)) continue;
@@ -270,7 +191,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     {
         var keysToRemove = new List<string>();
         // iterate over resources
-        _resources.AsParallel().ForAll(res =>
+        Resources.AsParallel().ForAll(res =>
         {
             res.Value.Decay(deltaTime);
             if (res.Value.Amount <= 0.08f)
@@ -280,8 +201,8 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         });
         foreach (var key in keysToRemove)
         {
-            _resources.Remove(key, out _);
             RaiseResourceDepletedEvent(key);
+            Resources.TryRemove(key, out _);
         }
     }
     
@@ -299,7 +220,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     //            }
     //        });
     //    };
-//
+
     //    async Task AwaitPartition(IEnumerator<KeyValuePair<string, ISimulationResource>> partition)
     //    {
     //        using (partition)
@@ -329,14 +250,14 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     {
         // If a food-resource exists at the given position, then add the amount to it
         var key = SimulationObjectMixin.KeyFor("food", (int)pos.X, (int)pos.Y);
-        if (_resources.TryGetValue(key, out var existingFood))
+        if (Resources.TryGetValue(key, out var existingFood))
         {
             existingFood.Amount += amount;
             return;
         }
         // Otherwise create a new food-resource and add it to the dictionary
-        var food = new FoodResource((float)pos.X, (float)pos.Y, amount, decayRate);
-        _resources.TryAdd(key, food);
+        var food = new FoodResource((int)pos.X, (int)pos.Y, amount, decayRate);
+        Resources.TryAdd(key, food);
     }
 
     public async Task RunGameLoop(int fps = 60)
@@ -345,26 +266,29 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         var stopwatch = new Stopwatch();
         var fixedTimeStep = 1f / fps;
         var i = 0;
-        while (_run)
+        while (true)
         {
-            stopwatch.Reset();
-            stopwatch.Start();
-            if (++i % 3 == 0)
+            if (_run)
             {
-                i = 1;
-                DecayResources(fixedTimeStep*3);
-            }
-            await ProcessResourceAccessRequests();
-            await UpdateAgents(_agents, fixedTimeStep).ConfigureAwait(false);
-            // Render
-            await Render();//.ConfigureAwait(false);
-            stopwatch.Stop();
-            // Sleep the thread to maintain a constant frame rate
-            var elapsedMilliseconds = (float)stopwatch.Elapsed.TotalMilliseconds;
-            var sleepTime = (fixedTimeStep * 1000.0f) - elapsedMilliseconds;
-            if (sleepTime > 0)
-            {
-                await Task.Delay((int)sleepTime);
+                stopwatch.Reset();
+                stopwatch.Start();
+                if (++i % 3 == 0)
+                {
+                    i = 1;
+                    DecayResources(fixedTimeStep * 3);
+                }
+
+                await UpdateAgents(_agents, fixedTimeStep).ConfigureAwait(false);
+                // Render
+                await Render(); //.ConfigureAwait(false);
+                stopwatch.Stop();
+                // Sleep the thread to maintain a constant frame rate
+                var elapsedMilliseconds = (float)stopwatch.Elapsed.TotalMilliseconds;
+                var sleepTime = (fixedTimeStep * 1000.0f) - elapsedMilliseconds;
+                if (sleepTime > 0)
+                {
+                    await Task.Delay((int)sleepTime);
+                }
             }
         }
     }
@@ -379,7 +303,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
                 _canvas.RemoveResourcesToBeDeleted();
                 _canvas.DrawHome();
                 // Iterate over resource and draw them
-                foreach (var res in _resources)
+                foreach (var res in Resources)
                 {
                     var pos = new Point(res.Value.X, res.Value.Y);
                     if (res.Value is FoodResource)
@@ -426,23 +350,23 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         // Get key and check if resource exists
         var key = SimulationObjectMixin.KeyFor(type, (int)pos.X, (int)pos.Y);
         // Try get resource if exists and update its amount
-        if (_resources.TryGetValue(key, out var res))
+        if (Resources.TryGetValue(key, out var res))
         {
             var currValue = res.Amount;
-            res.Amount = (currValue + amount);
+            res.Amount = currValue + amount;
             return;
         }
         // Otherwise get new pheromone from pool and add it.
         if (type == "pheromone")
         {
-            _resources.TryAdd(key, _pheromoneResourcePool.GetObject(pos, amount, decayRate));
+            Resources.TryAdd(key, _pheromoneResourcePool.GetObject(pos, amount, decayRate));
             return;
         }
 
-        _resources.TryAdd(key, _pheromoneResourceReturnPool.GetObject(pos, amount, decayRate));
+        Resources.TryAdd(key, _pheromoneResourceReturnPool.GetObject(pos, amount, decayRate));
     }
     
-    private void RaiseResourceDepletedEvent(string key)
+    public void RaiseResourceDepletedEvent(string key)
     {
         ResourceDepleted?.Invoke(this, new ResourceDepletedEventArgs(key));
     }

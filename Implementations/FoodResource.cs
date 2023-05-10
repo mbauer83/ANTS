@@ -1,7 +1,7 @@
-using AntColonySimulation.definitions;
-using AntColonySimulation.utils.fn;
+using AntColonySimulation.Definitions;
+using AntColonySimulation.Utils.Functional;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public class FoodResource: ISimulationResource, SimulationObjectMixin
 {

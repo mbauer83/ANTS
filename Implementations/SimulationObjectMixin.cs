@@ -1,4 +1,4 @@
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public interface SimulationObjectMixin
 {

@@ -1,6 +1,6 @@
-using AntColonySimulation.utils.fn;
+using AntColonySimulation.Utils.Functional;
 
-namespace AntColonySimulation.definitions;
+namespace AntColonySimulation.Definitions;
 
 public interface ISimulationResource
 {

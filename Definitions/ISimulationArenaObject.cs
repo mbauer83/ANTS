@@ -1,6 +1,6 @@
 using System;
 
-namespace AntColonySimulation.definitions;
+namespace AntColonySimulation.Definitions;
 
 public interface ISimulationArenaObject: ICloneable
 {

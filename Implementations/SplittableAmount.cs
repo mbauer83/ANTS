@@ -1,6 +1,6 @@
-using AntColonySimulation.utils.fn;
+using AntColonySimulation.Utils.Functional;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public readonly struct SplittableAmount
 {

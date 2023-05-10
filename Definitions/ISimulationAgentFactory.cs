@@ -1,7 +1,7 @@
 
 using System.Collections.Generic;
 
-namespace AntColonySimulation.definitions;
+namespace AntColonySimulation.Definitions;
 
 public interface ISimulationAgentFactory<T1, T2>
     where T1: ISimulationAgent<T2>

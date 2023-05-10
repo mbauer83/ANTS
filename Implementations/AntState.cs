@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using AntColonySimulation.definitions;
+using AntColonySimulation.Definitions;
 
-namespace AntColonySimulation.implementations;
+namespace AntColonySimulation.Implementations;
 
 public readonly struct AntState: ISimulationAgentState 
 {

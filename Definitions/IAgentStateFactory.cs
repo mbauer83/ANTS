@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace AntColonySimulation.definitions;
+namespace AntColonySimulation.Definitions;
 
 public interface IAgentStateFactory<T> where T: ISimulationAgentState
 {
