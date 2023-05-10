@@ -15,7 +15,7 @@ public class Ant: ISimulationAgent<AntState>
     private const float FoodAttentionThreshold = 0.1f;
     private const float PheromoneAttentionThreshold = 0.09f;
     private const float CarryingCapacity = 5f;
-    private const int DepositPheromoneAfterSteps = 6;
+    private const int DepositPheromoneAfterSteps = 4;
     private const int StepsWithoutEventBeforeReset = 750;
     private const int InitialIgnorePheromonesForSteps = 50;
 

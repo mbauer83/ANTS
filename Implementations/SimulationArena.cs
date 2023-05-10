@@ -260,7 +260,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         Resources.TryAdd(key, food);
     }
 
-    public async Task RunGameLoop(int fps = 60)
+    public async Task RunGameLoop(int fps = 30)
     {
         _run = true;
         var stopwatch = new Stopwatch();
