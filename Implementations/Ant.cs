@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using AntColonySimulation.Definitions;
 using AntColonySimulation.Utils.Functional;
@@ -55,7 +56,7 @@ public class Ant: ISimulationAgent<AntState>
         _turnAfterRandomSteps = _rnd.Next((int) (_turnAfterRandomSteps * 0.1f), (int) (_turnAfterRandomSteps * 0.43)) * (_rnd.Next(0, 2) * 2 - 1);
     }
 
-    public void Act(ISimulationArena<AntState> arena, in float timeDelta)
+    public async Task Act(ISimulationArena<AntState> arena, float timeDelta)
     {
         ResetSpeedAndTurningAngle();
         if (_hasUnresolvedResourceAccessRequest)
@@ -81,23 +82,12 @@ public class Ant: ISimulationAgent<AntState>
         if (foodToPickUp.IsSome())
         {
             var food = foodToPickUp.Get();
-            arena.Resources.TryGetValue(food.Key, out var foodResource);
-            if (foodResource == null) return;
-            // Split foodResource, taking the min of the amount left and the amount the ant can carry
-            var amountToPickUp = Math.Min(
-                CarryingCapacity - State.TotalFoodCarried,
-                foodResource.Amount
+            var amountReceived = await arena.AttemptToTakeResourceAmount(food.Key, CarryingCapacity - State.TotalFoodCarried);
+            amountReceived.Match<int?>(
+                t  => TakeFood(food.X, food.Y, t.Item1),
+                (_) => {},
+                null
             );
-            if (amountToPickUp <= 0f) return;
-            var (takenResource, remainingResource) = food.Split(amountToPickUp);
-            if (remainingResource.IsNone() || (remainingResource is Some<ISimulationResource> foodResourceRemaining && foodResourceRemaining.Get().Amount <= 0.01f))
-            {
-                arena.RaiseResourceDepletedEvent(food.Key);
-                arena.Resources.TryRemove(food.Key, out _);
-            }
-
-            if (!takenResource.IsSome()) return;
-            TakeFood((takenResource.Get() as FoodResource)!);
             return;
         }
 
@@ -169,13 +159,13 @@ public class Ant: ISimulationAgent<AntState>
         _stepsWithoutEvent = 0;
     }
     
-    private void TakeFood(FoodResource food)
+    private void TakeFood(in float x, in float y, in float amount)
     {
         _hasUnresolvedResourceAccessRequest = false;
-        _lastFoodTakenPos = new Some<(float, float)>((food.X, food.Y));
+        _lastFoodTakenPos = new Some<(float, float)>((x, y));
         // Turn towards home 
         _desiredOrientation = MathF.Atan2(_home.Item2 - State.Y, _home.Item1 - State.X);
-        State = State.WithData(totalFoodCarried: State.TotalFoodCarried + food.Amount, orientation: _desiredOrientation);
+        State = State.WithData(totalFoodCarried: State.TotalFoodCarried + amount, orientation: _desiredOrientation);
         _mode = Mode.Return;
         _currentHighestPheromoneAmountSensed = new None<float>();
         _stepsWithoutEvent = 0;

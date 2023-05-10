@@ -84,6 +84,7 @@ namespace AntColonySimulation
                 Content = "Pause/Run",
             };
             pauseRunButton.Height = 30;
+            pauseRunButton.Width = 100;
             pauseRunButton.Click += TogglePause;
             // Add to parent Canvas
             // position button with half of simulationCanvasTopPosition as top position and 2% of width or at least 50px right margin

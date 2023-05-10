@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using AntColonySimulation.Utils.Functional;
 
 namespace AntColonySimulation.Definitions;
 
@@ -28,6 +29,8 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
 
     bool WithinBounds(float x, float y);
     void AddPheromone(string type, Point pos, float amount, float decayRate);
+
+    Task<IOption<float>> AttemptToTakeResourceAmount(string key, float maxAmount);
     Task RunGameLoop(int fps = 60);
     void OnMouseMove(object sender, MouseEventArgs e);
     void RaiseResourceDepletedEvent(string key);
