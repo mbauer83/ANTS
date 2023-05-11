@@ -62,9 +62,10 @@ The application-code is divided into definitions (interfaces) and implementation
 
 The application is deliberately coded from scratch with minimal and simple tools (Wpf and its primitives) in order to provide a demonstration of how the problem-domain and solution-implementation can be approached. This naturally entails that  significant potential benefits to performance and conciseness from using dedicated libraries are not realized.
 
-
 Since ants only get created and added to the canvas once while pheromones get removed and added all the time, the latter have a higher default z-index. Specifying the z-index of ants (or pheromones) manually leads to a severe drop in performance due to the engine having to re-calculate the rendering-order for so many resources every frame. Thus, the application does not set proper z-levels, which means that the triangles representing ants will be obscured by intersecting pheromone-representations.
 
 Currently, the `SimulationArena` is generic in the the type of `State` of its `Agent`s. In languages that don't require concretizing an interface provided as a generic type parameter and/or those with support for union-types, this would not hinder extending the application to support agents with different types of states in the same simulation. Since C# does not meet these criteria, this aspect of the application has to be changed to achieve this goal. In the future, this aspect will be rewritten to facilitate extending the functionality in the manner specified above.
+
+Additionally, this solution deliberately avoids using third-party libraries like `MediatR` (which can reduce boilerplate and promote better patterns) in order to demonstrate an approach from first principles.
 
 There is also further opportunity for improving the codebase in terms of modularity, conciseness, and adherence to best practices. The additional effort is justified and appropriate when building production-grade or enterprise-level software, but not necessarily for a project of this scope. However, improved adherence to such principles would help demonstrate these best-practices, so corresponding modifications may be made at a later date.

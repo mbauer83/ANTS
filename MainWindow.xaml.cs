@@ -2,23 +2,25 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Windows;
 using System.Windows.Controls;
 using AntColonySimulation.Definitions;
 using AntColonySimulation.Implementations;
+using System.Threading.Tasks;
 
 namespace AntColonySimulation
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         
         private const int SimulationCanvasWidth     = 1000;
         private const int SimulationCanvasHeight    = 600;
+        private const int HomeX = SimulationCanvasWidth / 4;
+        private const int HomeY = SimulationCanvasHeight / 2;
         private const float FoodDecayRate = 0.02f;
         private const int FoodClusterX    = (int)(SimulationCanvasWidth * 0.75f);
         private const int FoodClusterY    = (int)(SimulationCanvasHeight * 0.5f);
         
-        private SimulationArena<AntState> _arena;
+        private readonly SimulationArena<AntState> _arena;
 
         public MainWindow()
         {
@@ -30,8 +32,8 @@ namespace AntColonySimulation
             InitializeComponent();
             
             ThreadPool.GetMinThreads(out var _, out var minCompletionPortThreads);
-            ThreadPool.SetMinThreads(16, minCompletionPortThreads);
-            ThreadPool.SetMaxThreads(32, minCompletionPortThreads);
+            ThreadPool.SetMinThreads(Environment.ProcessorCount * 2, minCompletionPortThreads);
+            ThreadPool.SetMaxThreads(Environment.ProcessorCount * 2, minCompletionPortThreads);
 
             // Cluster food around the middle of the right half of the canvas
             var resourcesDict = new ConcurrentDictionary<string, ISimulationResource>();
@@ -60,15 +62,13 @@ namespace AntColonySimulation
             var pheromoneResourceReturnPool = new PheromoneResourceReturnPool(SimulationCanvasWidth * SimulationCanvasHeight / 2, SimulationCanvasWidth * SimulationCanvasHeight);
 
             // Create 1000 agents starting at the middle of the left half of the canvas
-            var homeX = SimulationCanvasWidth / 4;
-            var homeY = SimulationCanvasHeight / 2;
             var agents = new List<ISimulationAgent<AntState>>();
             for (var i = 0; i < 50; i++)
             {
                 // random orientation between 0f and TwoPi
                 var orientation = (float)(random.NextDouble()  * 2f * float.Pi);
-                var antState = new AntState(homeX, homeY, orientation, 120f, 0f);
-                var ant = new Ant(i.ToString(), antState, (homeX, homeY), random);
+                var antState = new AntState(HomeX, HomeY, orientation, 120f, 0f);
+                var ant = new Ant(i.ToString(), antState, (HomeX, HomeY), random);
                 agents.Add(ant);
             }
             
@@ -116,12 +116,13 @@ namespace AntColonySimulation
             
             // Attach SimulationArena::OnMouseMove as left mouse up event handler
             canvas.MouseMove += arena.OnMouseMove;
-            
+
             // Start the simulation
-            arena.RunGameLoop();
+            Task.Run(() => arena.RunGameLoop());
+            //arena.RunGameLoop();
         }
         
-        public void TogglePause(object sender, EventArgs e)
+        private void TogglePause(object sender, EventArgs e)
         {
             _arena.TogglePause();
         }
