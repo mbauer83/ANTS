@@ -64,6 +64,8 @@ The application is deliberately coded from scratch with minimal and simple tools
 
 Since ants only get created and added to the canvas once while pheromones get removed and added all the time, the latter have a higher default z-index. Specifying the z-index of ants (or pheromones) manually leads to a severe drop in performance due to the engine having to re-calculate the rendering-order for so many resources every frame. Thus, the application does not set proper z-levels, which means that the triangles representing ants will be obscured by intersecting pheromone-representations.
 
+We're abusing Wpf a bit here, and even though the only resource where modifications may be attempted from multiple agents in parallel is managed via a `ConcurrentDictionary` through the `SimulationArena` itself and everything that is not UI is taken off the main thread, the application sometimes becomes irresponsive and requires restart. This issue is under ongoing investigation.
+
 Currently, the `SimulationArena` is generic in the the type of `State` of its `Agent`s. In languages that don't require concretizing an interface provided as a generic type parameter and/or those with support for union-types, this would not hinder extending the application to support agents with different types of states in the same simulation. Since C# does not meet these criteria, this aspect of the application has to be changed to achieve this goal. In the future, this aspect will be rewritten to facilitate extending the functionality in the manner specified above.
 
 Additionally, this solution deliberately avoids using third-party libraries like `MediatR` (which can reduce boilerplate and promote better patterns) in order to demonstrate an approach from first principles.
