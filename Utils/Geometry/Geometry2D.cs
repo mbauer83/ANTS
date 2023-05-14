@@ -1,6 +1,6 @@
 using System;
 
-namespace AntColonySimulation.utils.geometry;
+namespace AntColonySimulation.Utils.Geometry;
 
 public class Geometry2D
 {

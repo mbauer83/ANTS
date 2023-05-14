@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace AntColonySimulation.utils.fn;
+namespace AntColonySimulation.Utils.Functional;
 
 public class Some<T>: IOption<T>
 {

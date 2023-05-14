@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Media.Media3D;
 
-namespace AntColonySimulation.utils.fn;
+namespace AntColonySimulation.Utils.Functional;
 
-public interface IMonad<T>
+public interface IMonad<out T>
 {
     IMonad<T1> Map<T1>(Func<T, T1> f);
     IMonad<T1> Apply<T1>(IMonad<Func<T, T1>> f);

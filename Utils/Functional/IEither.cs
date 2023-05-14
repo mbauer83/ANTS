@@ -1,6 +1,6 @@
 using System;
 
-namespace AntColonySimulation.utils.fn;
+namespace AntColonySimulation.Utils.Functional;
 
 public interface IEither<TLeft, TRight>: IMonad<TRight> where TLeft: Exception
 {

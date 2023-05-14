@@ -1,6 +1,6 @@
 using System;
 
-namespace AntColonySimulation.utils.fn;
+namespace AntColonySimulation.Utils.Functional;
 
 public class Right<TLeft, TRight>: IEither<TLeft, TRight> where TLeft: Exception
 {
