@@ -84,7 +84,7 @@ public partial class MainWindow
         var drawFoodLabel = new Label
         {
             Content = "Hold down left mouse button and drag to draw food",
-            Height = 30,
+            Height = fontSize + 20,
             Width = 500,
             FontSize = fontSize
         };

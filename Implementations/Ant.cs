@@ -15,8 +15,8 @@ public class Ant : ISimulationAgent
     private const float PheromoneAttentionThreshold = 0.09f;
     private const float CarryingCapacity = 5f;
     private const int DepositPheromoneAfterSteps = 4;
-    private const int StepsWithoutEventBeforeReset = 900;
-    private const int InitialIgnorePheromonesForSteps = 40;
+    private const int StepsWithoutEventBeforeReset = 1000;
+    private const int InitialIgnorePheromonesForSteps = 30;
     private const float TwoPi = (float)(2 * Math.PI);
     private readonly (float, float) _home;
     private readonly float _initialSpeed;
@@ -277,6 +277,11 @@ public class Ant : ISimulationAgent
         }
 
         _ignorePheromonesForSteps--;
+        if (_ignorePheromonesForSteps == 0)
+        {
+            _stepsWithoutEvent = 0;
+            _upperPheromoneIntensityThreshold = _noneFloat;
+        }
         MoveRandomly(arena, timeDelta);
     }
 
@@ -445,10 +450,10 @@ public class Ant : ISimulationAgent
         switch (_mode)
         {
             case Mode.Forage:
-                arena.AddPheromone("pheromone", new Point(State.X, State.Y), 0.25f, 0.10f);
+                arena.AddPheromone("pheromone", new Point(State.X, State.Y), 0.25f, 0.06f);
                 break;
             case Mode.Return:
-                arena.AddPheromone("pheromone-r", new Point(State.X, State.Y), 0.25f, 0.10f);
+                arena.AddPheromone("pheromone-r", new Point(State.X, State.Y), 0.25f, 0.06f);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
