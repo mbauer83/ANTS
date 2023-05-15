@@ -1,0 +1,16 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=327174c5_002D8e26_002D43d7_002D9c91_002Db28510f9560e/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="TestSplitSplitsCorrectly" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.SplittableAmountTest.TestSplitSplitsCorrectly&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.SplittableAmountTest.TestSplitGivesNoneWhenFirstPartAmountIsTooBig&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.AntStateTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.FoodResourceTests.Split_ReturnsTwoFoodResources&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.FoodResourceTests.WithAmount_ReturnsNewFoodResourceWithCorrectAmount&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.FoodResourceTests.Decayed_ReturnsNewFoodResourceWithCorrectAmount&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.PheromoneResourceTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.PheromoneResourceReturnTest&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.AntTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.SimulationArenaTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::D09C1547-5204-4ED0-9731-52B98C997E81::net7.0-windows::AntColonySimulationTest.SimulationCanvasTest&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
