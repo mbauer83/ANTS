@@ -31,6 +31,8 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
     void AddPheromone(string type, Point pos, float amount, float decayRate);
 
     Task<IOption<float>> AttemptToTakeResourceAmount(string key, float maxAmount);
+    
+    IOption<float> AttemptToTakeResourceAmountSync(string key, float maxAmount);
     Task RunGameLoop(int fps = 60);
     void OnMouseMove(object sender, MouseEventArgs e);
     void RaiseResourceDepletedEvent(string key);

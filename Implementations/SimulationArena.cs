@@ -57,24 +57,13 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         float exclusiveLowerLimit = 0f,
         float? exclusiveUpperLimit = null
     ) {
-        var list = new List<(ISimulationResource, float, float)>();
-        foreach (var res in Resources)
-        {
-            if (res.Value.Type == resourceType &&
-                res.Value.Amount > exclusiveLowerLimit &&
-                (exclusiveUpperLimit == null || res.Value.Amount < exclusiveUpperLimit) &&
-                agent.WithinSensoryField(res.Value.X, res.Value.Y)
-            )
-            {
-                var distance = Geometry2D.EuclideanDistance(agent.State.X, agent.State.Y, res.Value.X, res.Value.Y);
-                var relativeOrientation = MathF.Atan2(res.Value.Y - agent.State.Y, res.Value.X - agent.State.X);
-                list.Add((
-                    res.Value, 
-                    distance,
-                    relativeOrientation
-                    ));
-            }
-        }
+        var list = (from res in Resources
+            where res.Value.Type == resourceType && res.Value.Amount > exclusiveLowerLimit &&
+                  (exclusiveUpperLimit == null || res.Value.Amount < exclusiveUpperLimit) &&
+                  agent.WithinSensoryField(res.Value.X, res.Value.Y)
+            let distance = Geometry2D.EuclideanDistance(agent.State.X, agent.State.Y, res.Value.X, res.Value.Y)
+            let relativeOrientation = Geometry2D.AngleBetween(agent.State.X, agent.State.Y, res.Value.X, res.Value.Y)
+            select (res.Value, distance, relativeOrientation)).ToList();
         list.Sort((t1, t2) => t1.Item2.CompareTo(t2.Item2));
         return list;
     }
@@ -101,10 +90,10 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
 
     public bool WithinBounds(float x, float y)
     {
-        var buffer = 5f;
+        const float buffer = 5f;
         return x >= buffer && x <= (Width - buffer) && y >= buffer && y <= (Height - buffer);
     }
-    
+
     private async Task UpdateAgents(List<ISimulationAgent<T>> agents, float deltaTime)
     {
         foreach (var agent in agents)
@@ -117,14 +106,13 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     {
         var keysToRemove = new List<string>();
         // iterate over resources
-        Resources.AsParallel().ForAll(res =>
-        {
+        foreach (var res in Resources) {
             res.Value.Decay(deltaTime);
             if (res.Value.Amount <= 0.08f)
             {
                 keysToRemove.Add(res.Key);
             }
-        });
+        }
         foreach (var key in keysToRemove)
         {
             RaiseResourceDepletedEvent(key);
@@ -161,7 +149,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
                 if (++i % 3 == 0)
                 {
                     i = 1;
-                    DecayResources(fixedTimeStep * 3);
+                    await Task.Run(() => DecayResources(fixedTimeStep * 3));
                 }
 
                 await UpdateAgents(_agents, fixedTimeStep).ConfigureAwait(false);
@@ -183,7 +171,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     {
         return Task.Run(() =>
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 // Delete all resource-representations queued for removal
                 _canvas.RemoveResourcesToBeDeleted();
@@ -274,9 +262,27 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         });
     }
     
+    public IOption<float> AttemptToTakeResourceAmountSync(string key, float maxAmount)
+    {
+        if (!Resources.TryGetValue(key, out var res))
+        {
+            return _noneFloat;
+        }
+        lock (res)
+        {
+            var amount = Math.Min(res.Amount, maxAmount);
+            res.Amount -= amount;
+            if (!(res.Amount <= 0.08f)) return new Some<float>(amount);
+            Resources.TryRemove(key, out _);
+            RaiseResourceDepletedEvent(key);
+
+            return new Some<float>(amount);
+        }
+    }
+    
     public void RaiseResourceDepletedEvent(string key)
     {
-        ResourceDepleted?.Invoke(this, new ResourceDepletedEventArgs(key));
+        ResourceDepleted.Invoke(this, new ResourceDepletedEventArgs(key));
     }
     public EventHandler<ResourceDepletedEventArgs> ResourceDepleted;
     
