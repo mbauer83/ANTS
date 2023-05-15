@@ -19,7 +19,7 @@ public partial class MainWindow
     private const int FoodClusterX = (int)(SimulationCanvasWidth * 0.75f);
     private const int FoodClusterY = (int)(SimulationCanvasHeight * 0.5f);
 
-    private readonly SimulationArena<AntState> _arena;
+    private readonly SimulationArena _arena;
 
     public MainWindow()
     {
@@ -61,7 +61,7 @@ public partial class MainWindow
             SimulationCanvasWidth * SimulationCanvasHeight / 2, SimulationCanvasWidth * SimulationCanvasHeight);
 
         // Create 1000 agents starting at the middle of the left half of the canvas
-        var agents = new List<ISimulationAgent<AntState>>();
+        var agents = new List<ISimulationAgent>();
         for (var i = 0; i < 50; i++)
         {
             // random orientation between 0f and TwoPi
@@ -76,6 +76,25 @@ public partial class MainWindow
         var simulationCanvasTopPosition = Height - SimulationCanvasHeight;
         parentCanvas.Width = SimulationCanvasWidth;
         parentCanvas.Height = SimulationCanvasHeight + simulationCanvasTopPosition;
+        
+        // Set font size to percentage of canvas height
+        var fontSize = Math.Max(16, 0.02 * SimulationCanvasHeight);
+        
+        // Add label with hint for drawing food
+        var drawFoodLabel = new Label
+        {
+            Content = "Hold down left mouse button and drag to draw food",
+            Height = 30,
+            Width = 500,
+            FontSize = fontSize
+        };
+        // Position on top left corner
+        Canvas.SetTop(drawFoodLabel, Math.Max(50, 0.02 * SimulationCanvasHeight));
+        Canvas.SetLeft(drawFoodLabel, Math.Max(50, 0.02 * SimulationCanvasWidth));
+        // Set z-level of button
+        Panel.SetZIndex(drawFoodLabel, 3);
+        // Add to parent canvas
+        parentCanvas.Children.Add(drawFoodLabel);
 
         // Add Pause/Run button
         var pauseRunButton = new Button
@@ -87,7 +106,7 @@ public partial class MainWindow
         pauseRunButton.Click += TogglePause;
         // Add to parent Canvas
         // position button with half of simulationCanvasTopPosition as top position and 2% of width or at least 50px right margin
-        Canvas.SetTop(pauseRunButton, simulationCanvasTopPosition / 2 - pauseRunButton.Height);
+        Canvas.SetTop(pauseRunButton, Math.Max(50, 0.02 * SimulationCanvasHeight));
         Canvas.SetRight(pauseRunButton, Math.Max(50, 0.02 * SimulationCanvasWidth));
         // Set z-level of button
         Panel.SetZIndex(pauseRunButton, 3);
@@ -102,7 +121,7 @@ public partial class MainWindow
         Content = parentCanvas;
 
         // Create the SimulationArena object
-        var arena = new SimulationArena<AntState>(
+        var arena = new SimulationArena(
             SimulationCanvasWidth,
             SimulationCanvasHeight,
             resourcesDict,

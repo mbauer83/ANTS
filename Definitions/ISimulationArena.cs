@@ -7,7 +7,7 @@ using AntColonySimulation.Utils.Functional;
 
 namespace AntColonySimulation.Definitions;
 
-public interface ISimulationArena<T> where T : ISimulationAgentState
+public interface ISimulationArena
 {
     int Width { get; }
     int Height { get; }
@@ -15,15 +15,15 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
     ConcurrentDictionary<string, ISimulationResource> Resources { get; }
     
     List<(ISimulationResource, float, float)> ResourcesInSensoryField(
-        ISimulationAgent<T> agent,
+        ISimulationAgent agent,
         string resourceType,
         float exclusiveLowerLimit = 0f,
         float? exclusiveUpperLimit = null
     );
 
     // Not used in current simulation, but useful for other simulations and future extensions
-    List<(ISimulationAgent<T>, float)> AgentsInSensoryField(
-        ISimulationAgent<T> agent
+    List<(ISimulationAgent, float)> AgentsInSensoryField(
+        ISimulationAgent agent
     );
 
     bool WithinBounds(float x, float y);

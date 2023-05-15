@@ -2,10 +2,10 @@ using System.Threading.Tasks;
 
 namespace AntColonySimulation.Definitions;
 
-public interface ISimulationAgent<T> where T : ISimulationAgentState
+public interface ISimulationAgent
 {
     public string Id { get; }
-    public T State { get; }
+    public ISimulationAgentState State { get; }
     public bool WithinSensoryField(float x1, float y1);
-    public Task Act(ISimulationArena<T> arena, float deltaTime);
+    public Task Act(ISimulationArena arena, float deltaTime);
 }

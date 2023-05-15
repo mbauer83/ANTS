@@ -9,7 +9,7 @@ using AntColonySimulation.Utils.Geometry;
 
 namespace AntColonySimulation.Implementations;
 
-public class Ant : ISimulationAgent<AntState>
+public class Ant : ISimulationAgent
 {
     private const float FoodAttentionThreshold = 0.1f;
     private const float PheromoneAttentionThreshold = 0.09f;
@@ -45,7 +45,7 @@ public class Ant : ISimulationAgent<AntState>
     {
         _rnd = rnd;
         Id = id;
-        State = state;
+        _state = state;
         _initialSpeed = State.Speed;
         _home = home;
         _desiredOrientation = State.Orientation;
@@ -55,9 +55,12 @@ public class Ant : ISimulationAgent<AntState>
     }
 
     public string Id { get; }
-    public AntState State { get; private set; }
+    
+    private AntState _state;
 
-    public async Task Act(ISimulationArena<AntState> arena, float timeDelta)
+    public ISimulationAgentState State => _state;
+
+    public async Task Act(ISimulationArena arena, float timeDelta)
     {
         ResetSpeedAndTurningAngle();
         if (_hasUnresolvedResourceAccessRequest) return;
@@ -81,7 +84,7 @@ public class Ant : ISimulationAgent<AntState>
         {
             var food = foodToPickUp.Get();
             var amountReceived =
-                await arena.AttemptToTakeResourceAmount(food.Key, CarryingCapacity - State.TotalFoodCarried);
+                await arena.AttemptToTakeResourceAmount(food.Key, CarryingCapacity - _state.TotalFoodCarried);
             amountReceived.Match<int?>(
                 t => TakeFood(food.X, food.Y, t.Item1),
                 _ => { },
@@ -100,19 +103,19 @@ public class Ant : ISimulationAgent<AntState>
         var orientationTowardsObject = Math.Atan2(y1 - State.Y, x1 - State.X);
         var rawAbsDifference = Math.Abs(State.Orientation - orientationTowardsObject);
         var absRadiansDistance = Math.Min(TwoPi - rawAbsDifference, rawAbsDifference);
-        return absRadiansDistance <= State.SensoryFieldAngelRadHalved;
+        return absRadiansDistance <= _state.SensoryFieldAngelRadHalved;
     }
 
     private void ResetSpeedAndTurningAngle()
     {
-        if (Math.Abs(State.Speed - _initialSpeed) > 0.01f) State = State.WithData(speed: _initialSpeed);
+        if (Math.Abs(State.Speed - _initialSpeed) > 0.01f) _state = _state.WithData(speed: _initialSpeed);
 
         if (Math.Abs(_maxTurningAngle - 0.1f) > 0.01f) _maxTurningAngle = 0.1f;
     }
 
-    private bool ShouldDepositFood(ISimulationArena<AntState> arena)
+    private bool ShouldDepositFood(ISimulationArena arena)
     {
-        if (State.TotalFoodCarried == 0f) return false;
+        if (_state.TotalFoodCarried == 0f) return false;
         // Home is in the center of the left half of the canvas
         var homeX = (float)arena.Home.X;
         var homeY = (float)arena.Home.Y;
@@ -122,7 +125,7 @@ public class Ant : ISimulationAgent<AntState>
 
     private void DepositFood()
     {
-        State = State.WithData(totalFoodCarried: 0f);
+        _state = _state.WithData(totalFoodCarried: 0f);
         // If we remember a last food position, turn towards it
         // otherwise, turn around
         _desiredOrientation = _lastFoodTakenPos.MatchReturn(
@@ -130,7 +133,7 @@ public class Ant : ISimulationAgent<AntState>
             s => (float)((s.Orientation + Math.PI) % TwoPi),
             State
         );
-        State = State.WithData(orientation: _desiredOrientation);
+        _state = _state.WithData(orientation: _desiredOrientation);
         _mode = Mode.Forage;
         _upperPheromoneIntensityThreshold = _noneFloat;
         _stepsWithoutEvent = 0;
@@ -143,7 +146,7 @@ public class Ant : ISimulationAgent<AntState>
         _lastFoodTakenPos = new Some<(float, float)>((x, y));
         // Turn towards home 
         _desiredOrientation = Geometry2D.AngleBetween(State.X, State.Y, _home.Item1, _home.Item2);
-        State = State.WithData(totalFoodCarried: State.TotalFoodCarried + amount, orientation: _desiredOrientation);
+        _state = _state.WithData(totalFoodCarried: _state.TotalFoodCarried + amount, orientation: _desiredOrientation);
         _mode = Mode.Return;
         _upperPheromoneIntensityThreshold = _noneFloat;
         _stepsWithoutEvent = 0;
@@ -179,7 +182,7 @@ public class Ant : ISimulationAgent<AntState>
             : State.Orientation;
     }
 
-    private void ReturnHome(ISimulationArena<AntState> arena, in float timeDelta)
+    private void ReturnHome(ISimulationArena arena, in float timeDelta)
     {
         // If home is within sensory field, move to i
         var (homeX, homeY) = ((float)arena.Home.X, (float)arena.Home.Y);
@@ -193,7 +196,7 @@ public class Ant : ISimulationAgent<AntState>
         Navigate(arena, timeDelta, pheromoneType);
     }
 
-    private void FollowPheromones(ISimulationArena<AntState> arena, float timeDelta, string pheromoneType,
+    private void FollowPheromones(ISimulationArena arena, float timeDelta, string pheromoneType,
         float? upperPheromoneIntensityThreshold)
     {
         // Get all pheromones in sensory field
@@ -213,7 +216,7 @@ public class Ant : ISimulationAgent<AntState>
             var gradient = EstimateOrientationTowardsResourceGradient(pheromonesWithDistanceAndOrientation);
 
             _desiredOrientation = gradient;
-            State = State.WithData(orientation: GetNewOrientation());
+            _state = _state.WithData(orientation: GetNewOrientation());
             MoveWithOrientation(arena, timeDelta);
             _stepsWithoutEvent++;
             return;
@@ -223,21 +226,21 @@ public class Ant : ISimulationAgent<AntState>
         MoveRandomly(arena, timeDelta);
     }
 
-    private void MoveTowardsHome(ISimulationArena<AntState> arena, float timeDelta)
+    private void MoveTowardsHome(ISimulationArena arena, float timeDelta)
     {
         var homeX = (float)arena.Home.X;
         var homeY = (float)arena.Home.Y;
         // Reduce speed when approaching home
-        State = State.WithData(speed: 0.7f * State.Speed);
+        _state = _state.WithData(speed: 0.7f * State.Speed);
         // Increase max turn angle when approaching home
         _maxTurningAngle = 1.2f * _maxTurningAngle;
         var angle = Math.Atan2(homeY - State.Y, homeX - State.X);
         _desiredOrientation = (float)angle % TwoPi;
-        State = State.WithData(orientation: GetNewOrientation());
+        _state = _state.WithData(orientation: GetNewOrientation());
         MoveWithOrientation(arena, timeDelta);
     }
 
-    private void Forage(ISimulationArena<AntState> arena, List<(ISimulationResource, float, float, double)> food,
+    private void Forage(ISimulationArena arena, List<(ISimulationResource, float, float, double)> food,
         in float timeDelta)
     {
         // If there is food in our sensory field,
@@ -252,7 +255,7 @@ public class Ant : ISimulationAgent<AntState>
         Navigate(arena, timeDelta, pheromoneType);
     }
 
-    private void Navigate(ISimulationArena<AntState> arena, float timeDelta, string pheromoneType)
+    private void Navigate(ISimulationArena arena, float timeDelta, string pheromoneType)
     {
         var upperPheromoneIntensityThreshold = _upperPheromoneIntensityThreshold.MatchReturn<float?, float?>(
             t => t.Item1,
@@ -277,7 +280,7 @@ public class Ant : ISimulationAgent<AntState>
         MoveRandomly(arena, timeDelta);
     }
 
-    private void MoveToMostSalientFood(ISimulationArena<AntState> arena,
+    private void MoveToMostSalientFood(ISimulationArena arena,
         List<(ISimulationResource, float, float, double)> food, float timeDelta)
     {
         // Sort by salience (Item3)
@@ -292,17 +295,17 @@ public class Ant : ISimulationAgent<AntState>
             foodX - State.X
         );
         // Reduce speed when approaching home
-        State = State.WithData(speed: 0.7f * State.Speed);
+        _state = _state.WithData(speed: 0.7f * State.Speed);
         // Increase max turn angle when approaching home
         _maxTurningAngle = 1.2f * _maxTurningAngle;
         _desiredOrientation = newOrientation;
-        State = State.WithData(orientation: GetNewOrientation());
+        _state = _state.WithData(orientation: GetNewOrientation());
         // Move towards food
         MoveWithOrientation(arena, timeDelta);
     }
 
     private List<(ISimulationResource, float, float, double)> GetFoodInSensoryFieldWithDistanceAndSaliency(
-        ISimulationArena<AntState> arena)
+        ISimulationArena arena)
     {
         var foodWithDistanceAndOrientation =
             arena.ResourcesInSensoryField(this, "food", FoodAttentionThreshold);
@@ -325,7 +328,7 @@ public class Ant : ISimulationAgent<AntState>
         return new Some<ISimulationResource>(foodWithDistanceOrientationSaliency[0].Item1);
     }
 
-    private void MoveWithOrientation(ISimulationArena<AntState> arena, float timeDelta)
+    private void MoveWithOrientation(ISimulationArena arena, float timeDelta)
     {
         var (currX, currY, currOrientation, currSpeed) = (State.X, State.Y, State.Orientation, State.Speed);
         var deltaX = (float)Math.Cos(currOrientation) * currSpeed * timeDelta;
@@ -349,17 +352,17 @@ public class Ant : ISimulationAgent<AntState>
             // Move in new direction
             newX = MathF.Max(0, MathF.Min(arena.Width - 1, currX + deltaX));
             newY = MathF.Max(0, MathF.Min(arena.Height - 1, currY + deltaY));
-            State = State.WithData(orientation: orientation, x: newX, y: newY);
+            _state = _state.WithData(orientation: orientation, x: newX, y: newY);
         }
         else
         {
-            State = State.WithData(newX, newY);
+            _state = _state.WithData(newX, newY);
         }
 
         DepositPheromonePeriodically(arena);
     }
 
-    private void DepositPheromonePeriodically(ISimulationArena<AntState> arena)
+    private void DepositPheromonePeriodically(ISimulationArena arena)
     {
         if (_stepsSincePheromoneDeposited % DepositPheromoneAfterSteps == 0)
         {
@@ -372,7 +375,7 @@ public class Ant : ISimulationAgent<AntState>
     }
 
     private (float, float, float) GetOrientationAndPosDeltaAwayFromWalls(
-        ISimulationArena<AntState> arena,
+        ISimulationArena arena,
         float timeDelta,
         float currOrientation,
         float currSpeed,
@@ -399,7 +402,7 @@ public class Ant : ISimulationAgent<AntState>
         return (newOrientation, deltaX, deltaY);
     }
 
-    private void MoveRandomly(ISimulationArena<AntState> arena, in float timeDelta)
+    private void MoveRandomly(ISimulationArena arena, in float timeDelta)
     {
         // Set random orientation every n steps, then MoveWithOrientation
         if (_randomStepsSinceLastTurn % _turnAfterRandomSteps == 0)
@@ -407,7 +410,7 @@ public class Ant : ISimulationAgent<AntState>
             // Get a delta orientation between -PI/4 and PI/4
             var orientationDelta = (float)(_rnd.NextDouble() * Math.PI / 2 - Math.PI / 4);
             _desiredOrientation = State.Orientation + orientationDelta;
-            State = State.WithData(orientation: GetNewOrientation());
+            _state = _state.WithData(orientation: GetNewOrientation());
             _randomStepsSinceLastTurn = 1;
         }
         else
@@ -416,7 +419,7 @@ public class Ant : ISimulationAgent<AntState>
         }
 
         if (Math.Abs(State.Orientation - _desiredOrientation) > 0.01f)
-            State = State.WithData(orientation: GetNewOrientation());
+            _state = _state.WithData(orientation: GetNewOrientation());
         MoveWithOrientation(arena, timeDelta);
     }
 
@@ -437,7 +440,7 @@ public class Ant : ISimulationAgent<AntState>
         return State.Orientation + orientationChange * sign;
     }
 
-    private void DepositPheromone(ISimulationArena<AntState> arena)
+    private void DepositPheromone(ISimulationArena arena)
     {
         switch (_mode)
         {

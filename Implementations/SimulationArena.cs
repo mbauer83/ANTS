@@ -12,22 +12,22 @@ using AntColonySimulation.Utils.Geometry;
 
 namespace AntColonySimulation.Implementations;
 
-public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgentState
+public class SimulationArena : ISimulationArena
 {
-    private readonly List<ISimulationAgent<T>> _agents;
+    private readonly List<ISimulationAgent> _agents;
     private readonly SimulationCanvas _canvas;
     private readonly IOption<float> _noneFloat = new None<float>();
     private readonly PheromoneResourcePool _pheromoneResourcePool;
     private readonly PheromoneResourceReturnPool _pheromoneResourceReturnPool;
 
     private bool _run;
-    public EventHandler<ResourceDepletedEventArgs> ResourceDepleted;
+    public readonly EventHandler<ResourceDepletedEventArgs> ResourceDepleted;
 
     public SimulationArena(
         int width,
         int height,
         ConcurrentDictionary<string, ISimulationResource> resources,
-        List<ISimulationAgent<T>> agents,
+        IEnumerable<ISimulationAgent> agents,
         SimulationCanvas canvas,
         PheromoneResourcePool pheromoneResourcePool,
         PheromoneResourceReturnPool pheromoneResourceReturnPool
@@ -36,7 +36,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         Width = width;
         Height = height;
         Resources = resources;
-        _agents = agents;
+        _agents = agents.ToList();
         _canvas = canvas;
         Home = new Point(width / 4f, height / 2f);
         ResourceDepleted += _canvas.OnResourceDepleted;
@@ -55,7 +55,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
     }
 
     public List<(ISimulationResource, float, float)> ResourcesInSensoryField(
-        ISimulationAgent<T> agent,
+        ISimulationAgent agent,
         string resourceType,
         float exclusiveLowerLimit = 0f,
         float? exclusiveUpperLimit = null
@@ -72,9 +72,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         return list;
     }
 
-    public List<(ISimulationAgent<T>, float)> AgentsInSensoryField(
-        ISimulationAgent<T> agent
-    )
+    public List<(ISimulationAgent, float)> AgentsInSensoryField(ISimulationAgent agent)
     {
         var list = (
             from otherAgent in _agents.AsParallel()
@@ -184,7 +182,7 @@ public class SimulationArena<T> : ISimulationArena<T> where T : ISimulationAgent
         ResourceDepleted.Invoke(this, new ResourceDepletedEventArgs(key));
     }
 
-    private async Task UpdateAgents(List<ISimulationAgent<T>> agents, float deltaTime)
+    private async Task UpdateAgents(IEnumerable<ISimulationAgent> agents, float deltaTime)
     {
         foreach (var agent in agents) await agent.Act(this, deltaTime);
     }

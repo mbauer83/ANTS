@@ -21,6 +21,7 @@ public class BaseAgentStateFactory : IAgentStateFactory<BaseSimulationAgentState
         return new BaseSimulationAgentState(
             rnd.Next(0, MaxWidth),
             rnd.Next(0, MaxHeight),
+            130f,
             160f,
             80,
             (float)rnd.NextDouble() * 2 * (float)Math.PI

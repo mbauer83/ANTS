@@ -3,14 +3,14 @@ using AntColonySimulation.Definitions;
 
 namespace AntColonySimulation.Implementations;
 
-public readonly struct AntState : ISimulationAgentState
+public class AntState : ISimulationAgentState
 {
     private BaseSimulationAgentState BaseState { get; }
 
     public float X => BaseState.X;
     public float Y => BaseState.Y;
     public float Orientation => BaseState.Orientation;
-    public float Speed { get; }
+    public float Speed => BaseState.Speed;
     public float SensoryFieldAngle => BaseState.SensoryFieldAngle;
 
     public int SensoryFieldRadius => BaseState.SensoryFieldRadius;
@@ -30,8 +30,7 @@ public readonly struct AntState : ISimulationAgentState
         int sensoryFieldRadius = 120
     )
     {
-        BaseState = new BaseSimulationAgentState(x, y, sensoryFieldAngle, sensoryFieldRadius, orientation);
-        Speed = speed;
+        BaseState = new BaseSimulationAgentState(x, y, speed, sensoryFieldAngle, sensoryFieldRadius, orientation);
         TotalFoodCarried = totalFoodCarried;
         SensoryFieldAngelRadHalved = sensoryFieldAngle * (float)Math.PI / 180f / 2f;
     }

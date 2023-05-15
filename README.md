@@ -134,12 +134,6 @@ performance due to the engine having to re-calculate the rendering-order for so 
 application does not set proper z-levels, which means that the triangles representing ants will be obscured by
 intersecting pheromone-representations.
 
-Currently, the `SimulationArena` is generic in the the type of `State` of its `Agent`s. In languages that don't require
-concretizing an interface provided as a generic type parameter and/or those with support for union-types, this would not
-hinder extending the application to support agents with different types of states in the same simulation. Since C# does
-not meet these criteria, this aspect of the application has to be changed to achieve this goal. In the future, this
-aspect will be rewritten to facilitate extending the functionality in the manner specified above.
-
 Additionally, this solution deliberately avoids using third-party libraries like `MediatR` (which can reduce boilerplate
 and promote better patterns) in order to demonstrate an approach from first principles.
 
