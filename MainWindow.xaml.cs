@@ -2,35 +2,33 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using AntColonySimulation.Definitions;
 using AntColonySimulation.Implementations;
-using System.Threading.Tasks;
 
 namespace AntColonySimulation;
 
 public partial class MainWindow
 {
-        
-    private const int SimulationCanvasWidth     = 1000;
-    private const int SimulationCanvasHeight    = 600;
+    private const int SimulationCanvasWidth = 1000;
+    private const int SimulationCanvasHeight = 600;
     private const int HomeX = SimulationCanvasWidth / 4;
     private const int HomeY = SimulationCanvasHeight / 2;
     private const float FoodDecayRate = 0.002f;
-    private const int FoodClusterX    = (int)(SimulationCanvasWidth * 0.75f);
-    private const int FoodClusterY    = (int)(SimulationCanvasHeight * 0.5f);
-        
+    private const int FoodClusterX = (int)(SimulationCanvasWidth * 0.75f);
+    private const int FoodClusterY = (int)(SimulationCanvasHeight * 0.5f);
+
     private readonly SimulationArena<AntState> _arena;
 
     public MainWindow()
     {
-
         Width = SimulationCanvasWidth + 50;
         Height = SimulationCanvasHeight + 200;
         MinWidth = Width;
         MinHeight = Height;
         InitializeComponent();
-            
+
         ThreadPool.GetMinThreads(out _, out var minCompletionPortThreads);
         ThreadPool.SetMaxThreads(Environment.ProcessorCount * 2, minCompletionPortThreads);
 
@@ -56,27 +54,29 @@ public partial class MainWindow
                 resourcesDict.TryAdd(key, food);
             }
         }
-            
-        var pheromoneResourcePool = new PheromoneResourcePool(SimulationCanvasWidth * SimulationCanvasHeight / 2, SimulationCanvasWidth * SimulationCanvasHeight);
-        var pheromoneResourceReturnPool = new PheromoneResourceReturnPool(SimulationCanvasWidth * SimulationCanvasHeight / 2, SimulationCanvasWidth * SimulationCanvasHeight);
+
+        var pheromoneResourcePool = new PheromoneResourcePool(SimulationCanvasWidth * SimulationCanvasHeight / 2,
+            SimulationCanvasWidth * SimulationCanvasHeight);
+        var pheromoneResourceReturnPool = new PheromoneResourceReturnPool(
+            SimulationCanvasWidth * SimulationCanvasHeight / 2, SimulationCanvasWidth * SimulationCanvasHeight);
 
         // Create 1000 agents starting at the middle of the left half of the canvas
         var agents = new List<ISimulationAgent<AntState>>();
         for (var i = 0; i < 50; i++)
         {
             // random orientation between 0f and TwoPi
-            var orientation = (float)(random.NextDouble()  * 2f * float.Pi);
+            var orientation = (float)(random.NextDouble() * 2f * float.Pi);
             var antState = new AntState(HomeX, HomeY, orientation, 120f, 0f);
             var ant = new Ant(i.ToString(), antState, (HomeX, HomeY), random);
             agents.Add(ant);
         }
-            
+
         // Crate the parent-canvas to contain buttons, text and the simulation canvas
         var parentCanvas = new Canvas();
         var simulationCanvasTopPosition = Height - SimulationCanvasHeight;
         parentCanvas.Width = SimulationCanvasWidth;
         parentCanvas.Height = SimulationCanvasHeight + simulationCanvasTopPosition;
-            
+
         // Add Pause/Run button
         var pauseRunButton = new Button
         {
@@ -92,13 +92,13 @@ public partial class MainWindow
         // Set z-level of button
         Panel.SetZIndex(pauseRunButton, 3);
         parentCanvas.Children.Add(pauseRunButton);
-            
+
         // Create the SimulationCanvas object and attach it to the parentCanvas 
         var canvas = new SimulationCanvas(SimulationCanvasWidth, SimulationCanvasHeight);
         Canvas.SetTop(canvas, simulationCanvasTopPosition / 2);
         Canvas.SetLeft(canvas, 0);
         parentCanvas.Children.Add(canvas);
-            
+
         Content = parentCanvas;
 
         // Create the SimulationArena object
@@ -112,14 +112,14 @@ public partial class MainWindow
             pheromoneResourceReturnPool
         );
         _arena = arena;
-            
+
         // Attach SimulationArena::OnMouseMove
         canvas.MouseMove += arena.OnMouseMove;
 
         // Start the simulation
         Task.Run(() => arena.RunGameLoop());
     }
-        
+
     private void TogglePause(object sender, EventArgs e)
     {
         _arena.TogglePause();

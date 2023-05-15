@@ -14,8 +14,6 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
     Point Home { get; }
     ConcurrentDictionary<string, ISimulationResource> Resources { get; }
     
-    void TogglePause();
-
     List<(ISimulationResource, float, float)> ResourcesInSensoryField(
         ISimulationAgent<T> agent,
         string resourceType,
@@ -23,6 +21,7 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
         float? exclusiveUpperLimit = null
     );
 
+    // Not used in current simulation, but useful for other simulations and future extensions
     List<(ISimulationAgent<T>, float)> AgentsInSensoryField(
         ISimulationAgent<T> agent
     );
@@ -31,9 +30,13 @@ public interface ISimulationArena<T> where T : ISimulationAgentState
     void AddPheromone(string type, Point pos, float amount, float decayRate);
 
     Task<IOption<float>> AttemptToTakeResourceAmount(string key, float maxAmount);
+
     
-    IOption<float> AttemptToTakeResourceAmountSync(string key, float maxAmount);
+    // The following methods are only used on the concrete implementation
+    // But are defined here for when we abstract the creation of the arena
+    // in extending the solution
     Task RunGameLoop(int fps = 60);
     void OnMouseMove(object sender, MouseEventArgs e);
     void RaiseResourceDepletedEvent(string key);
+    void TogglePause();
 }

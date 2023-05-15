@@ -2,30 +2,30 @@ using System;
 
 namespace AntColonySimulation.Utils.Functional;
 
-public class Some<T>: IOption<T>
+public class Some<T> : IOption<T>
 {
     public readonly T Value;
-    
+
     public Some(T value)
     {
         Value = value;
     }
-    
+
     public bool IsSome()
     {
         return true;
     }
-    
+
     public bool IsNone()
     {
         return false;
     }
-    
+
     public T Get()
     {
         return Value;
     }
-    
+
     public T GetOrElse(T defaultValue)
     {
         return Value;
@@ -35,13 +35,10 @@ public class Some<T>: IOption<T>
     {
         return new Some<T1>(f(Value));
     }
-    
+
     public IMonad<T1> Apply<T1>(IMonad<Func<T, T1>> f)
     {
-        if (f is Some<Func<T, T1>> some)
-        {
-            return new Some<T1>(some.Get()(Value));
-        }
+        if (f is Some<Func<T, T1>> some) return new Some<T1>(some.Get()(Value));
 
         return new None<T1>();
     }
@@ -55,7 +52,7 @@ public class Some<T>: IOption<T>
     {
         return f(Value);
     }
-    
+
     public void Match<T1>(Action<(T, T1)> some, Action<T1> none, T1 context)
     {
         some((Value, context));
@@ -65,5 +62,4 @@ public class Some<T>: IOption<T>
     {
         return some((Value, context));
     }
-
 }

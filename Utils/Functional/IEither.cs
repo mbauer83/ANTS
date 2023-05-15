@@ -2,7 +2,7 @@ using System;
 
 namespace AntColonySimulation.Utils.Functional;
 
-public interface IEither<out TLeft, out TRight>: IMonad<TRight> where TLeft: Exception
+public interface IEither<out TLeft, out TRight> : IMonad<TRight> where TLeft : Exception
 {
     public bool IsLeft();
     public bool IsRight();

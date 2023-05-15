@@ -10,22 +10,23 @@ namespace AntColonySimulation.Implementations;
 
 public class ResourceDepletedEventArgs : EventArgs
 {
-    public string Key { get; }
     public ResourceDepletedEventArgs(string key)
     {
         Key = key;
     }
+
+    public string Key { get; }
 }
-    
+
 public class SimulationCanvas : Canvas
 {
+    private readonly ConcurrentQueue<string> _deleteResourceQueue = new();
+
+    private readonly Dictionary<string, UIElement> _elements = new();
+
+    private readonly Dictionary<Color, SolidColorBrush> _brushes = new();
     public EventHandler<ResourceDepletedEventArgs>? ResourceDepleted;
-        
-    private readonly ConcurrentQueue<string> _deleteResourceQueue = new ConcurrentQueue<string>();
 
-    private readonly Dictionary<string, UIElement> _elements = new Dictionary<string, UIElement>();
-
-    private Dictionary<Color, SolidColorBrush> _brushes = new Dictionary<Color, SolidColorBrush>();
     public SimulationCanvas(int width, int height)
     {
         Background = Brushes.White;
@@ -68,10 +69,11 @@ public class SimulationCanvas : Canvas
             var yAddUpd = -Math.Sin(orientation) * 10;
             SetLeft(el!, position.X + xAddUpd);
             SetTop(el!, position.Y + yAddUpd);
-            el!.RenderTransform = new RotateTransform((orientation * 180/Math.PI - 75) % 360,0 , 0);
-                
+            el!.RenderTransform = new RotateTransform((orientation * 180 / Math.PI - 75) % 360, 0, 0);
+
             return;
         }
+
         // center triangle
         var antShape = new Path
         {
@@ -80,7 +82,7 @@ public class SimulationCanvas : Canvas
             Stretch = Stretch.Fill,
             Width = 10,
             Height = 10,
-            RenderTransform = new RotateTransform((orientation * 180/Math.PI) % 360, 5, 5)
+            RenderTransform = new RotateTransform(orientation * 180 / Math.PI % 360, 5, 5)
         };
         SetLeft(antShape, position.X);
         SetTop(antShape, position.Y);
@@ -92,16 +94,13 @@ public class SimulationCanvas : Canvas
     private SolidColorBrush GetBrush(Color color)
     {
         // If brush exists in dictionary, return it.
-        if (_brushes.TryGetValue(color, out var brush))
-        {
-            return brush;
-        }
+        if (_brushes.TryGetValue(color, out var brush)) return brush;
         // else construct it, place it in the dictionary and return it.
         brush = new SolidColorBrush(color);
         _brushes.Add(color, brush);
         return brush;
     }
-        
+
     public void DrawFood(string key, Point position, float value)
     {
         var color = GetShadeOfBrown(value);
@@ -127,7 +126,6 @@ public class SimulationCanvas : Canvas
 
     public void DrawVisionCone(string antKey, Point position, float orientation, int radius, float angle)
     {
-            
         var key = $"VisionCone_{antKey}";
         var angleInRad = angle * (float)Math.PI / 180;
 
@@ -136,13 +134,13 @@ public class SimulationCanvas : Canvas
         double endAngle = orientation + angleInRad / 2;
 
         // Calculate the two end points of the sector
-        Point startPoint = new Point(radius * Math.Cos(startAngle), radius * Math.Sin(startAngle));
-        Point endPoint = new Point(radius * Math.Cos(endAngle), radius * Math.Sin(endAngle));
-        Point arcPoint = new Point(0, 0);
+        var startPoint = new Point(radius * Math.Cos(startAngle), radius * Math.Sin(startAngle));
+        var endPoint = new Point(radius * Math.Cos(endAngle), radius * Math.Sin(endAngle));
+        var arcPoint = new Point(0, 0);
 
         // Create the path geometry
-        PathGeometry pathGeometry = new PathGeometry();
-        PathFigure pathFigure = new PathFigure();
+        var pathGeometry = new PathGeometry();
+        var pathFigure = new PathFigure();
         pathFigure.StartPoint = startPoint;
 
         // Add the arc segment
@@ -164,22 +162,19 @@ public class SimulationCanvas : Canvas
         pathGeometry.Figures.Add(pathFigure);
 
         // Create the path and set its fill
-        Path path = new Path();
+        var path = new Path();
         path.Data = pathGeometry;
         path.Fill = Brushes.LightBlue;
         path.Opacity = 0.15;
 
         // Create the transform group and add the rotation transform
-        TransformGroup transformGroup = new TransformGroup();
+        var transformGroup = new TransformGroup();
         transformGroup.Children.Add(new RotateTransform(startAngle + angleInRad / 2, 0, 0));
         transformGroup.Children.Add(new RotateTransform(orientation, 0, 0));
         transformGroup.Children.Add(new TranslateTransform(position.X, position.Y));
         path.RenderTransform = transformGroup;
 
-        if (_elements.ContainsKey(key))
-        {
-            RemoveElement(key);
-        }
+        if (_elements.ContainsKey(key)) RemoveElement(key);
 
         AddElement(key, path);
     }
@@ -203,14 +198,11 @@ public class SimulationCanvas : Canvas
             AddElement(key, homeShape);
         }
     }
-        
+
     public void RemoveResourcesToBeDeleted()
     {
         // Go through concurrent queue and delete
-        while (_deleteResourceQueue.TryDequeue(out var key))
-        {
-            RemoveElement(key);
-        }
+        while (_deleteResourceQueue.TryDequeue(out var key)) RemoveElement(key);
     }
 
     public void DrawPheromone(string type, string key, Point position, float value)
@@ -230,11 +222,10 @@ public class SimulationCanvas : Canvas
         }
         else
         {
-
             //var color = type == "pheromone"
             //    ? Brushes.DarkBlue
             //    : Brushes.DarkRed;
-            var pheromoneShape = new Ellipse()
+            var pheromoneShape = new Ellipse
             {
                 Width = 4,
                 Height = 4,
@@ -254,7 +245,7 @@ public class SimulationCanvas : Canvas
         float r = color.R;
         float g = color.G;
         float b = color.B;
-            
+
         // an intensityChange of -1 will return white
         // an intensityChange of 1 will return a fully saturated color
         if (intensityChange < 0)
@@ -273,7 +264,7 @@ public class SimulationCanvas : Canvas
 
         return Color.FromRgb((byte)r, (byte)g, (byte)b);
     }
-        
+
     private static Color GetShadeOfBrown(float intensity)
     {
         // logarithmically map intensity (0f to inf) to between -1f and 0f

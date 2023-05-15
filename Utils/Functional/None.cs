@@ -2,14 +2,13 @@ using System;
 
 namespace AntColonySimulation.Utils.Functional;
 
-public class None<T>: IOption<T>
+public class None<T> : IOption<T>
 {
-        
     public bool IsSome()
     {
         return false;
     }
-    
+
     public bool IsNone()
     {
         return true;
@@ -22,7 +21,7 @@ public class None<T>: IOption<T>
     {
         throw new InvalidOperationException("Cannot get value from None.");
     }
-    
+
     public T GetOrElse(T defaultValue)
     {
         return defaultValue;
@@ -32,22 +31,22 @@ public class None<T>: IOption<T>
     {
         return new None<T1>();
     }
-    
+
     public IMonad<T1> Apply<T1>(IMonad<Func<T, T1>> f)
     {
         return new None<T1>();
     }
-    
+
     public IMonad<T1> Pure<T1>(T1 value)
     {
         return new Some<T1>(value);
     }
-    
+
     public IMonad<T1> FlatMap<T1>(Func<T, IMonad<T1>> f)
     {
         return new None<T1>();
     }
-    
+
     public void Match<T1>(Action<(T, T1)> some, Action<T1> none, T1 context)
     {
         none(context);
@@ -57,5 +56,4 @@ public class None<T>: IOption<T>
     {
         return none(context);
     }
-
 }

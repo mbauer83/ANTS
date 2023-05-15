@@ -11,12 +11,6 @@ namespace AntColonySimulation.Implementations;
 
 public class Ant : ISimulationAgent<AntState>
 {
-    private enum Mode
-    {
-        Forage,
-        Return
-    }
-
     private const float FoodAttentionThreshold = 0.1f;
     private const float PheromoneAttentionThreshold = 0.09f;
     private const float CarryingCapacity = 5f;
@@ -24,25 +18,22 @@ public class Ant : ISimulationAgent<AntState>
     private const int StepsWithoutEventBeforeReset = 900;
     private const int InitialIgnorePheromonesForSteps = 40;
     private const float TwoPi = (float)(2 * Math.PI);
-
-    public string Id { get; }
-    public AntState State { get; private set; }
+    private readonly (float, float) _home;
+    private readonly float _initialSpeed;
 
     private readonly IOption<float> _noneFloat = new None<float>();
-    private Mode _mode = Mode.Forage;
-    private bool _hasUnresolvedResourceAccessRequest;
-    private int _randomStepsSinceLastTurn = 1;
-    private readonly int _turnAfterRandomSteps = 80;
-    private int _stepsSincePheromoneDeposited = 1;
     private readonly Random _rnd;
-    private float _maxTurningAngle = 0.1f;
+    private readonly int _turnAfterRandomSteps = 80;
     private float _desiredOrientation;
-    private IOption<float> _upperPheromoneIntensityThreshold = new None<float>();
-    private IOption<(float, float)> _lastFoodTakenPos = new None<(float, float)>();
-    private readonly (float, float) _home;
-    private int _stepsWithoutEvent;
+    private bool _hasUnresolvedResourceAccessRequest;
     private int _ignorePheromonesForSteps;
-    private readonly float _initialSpeed;
+    private IOption<(float, float)> _lastFoodTakenPos = new None<(float, float)>();
+    private float _maxTurningAngle = 0.1f;
+    private Mode _mode = Mode.Forage;
+    private int _randomStepsSinceLastTurn = 1;
+    private int _stepsSincePheromoneDeposited = 1;
+    private int _stepsWithoutEvent;
+    private IOption<float> _upperPheromoneIntensityThreshold = new None<float>();
 
 
     public Ant(
@@ -59,9 +50,12 @@ public class Ant : ISimulationAgent<AntState>
         _home = home;
         _desiredOrientation = State.Orientation;
         // Add a random int between 10% and 30% of _turnAfterRandomSteps with a random sign
-        _turnAfterRandomSteps = _rnd.Next((int)(_turnAfterRandomSteps * 0.1f), (int)(_turnAfterRandomSteps * 0.43)) *
+        _turnAfterRandomSteps = _rnd.Next((int)(_turnAfterRandomSteps * 0.1f), (int)(_turnAfterRandomSteps * 0.30)) *
                                 (_rnd.Next(0, 2) * 2 - 1);
     }
+
+    public string Id { get; }
+    public AntState State { get; private set; }
 
     public async Task Act(ISimulationArena<AntState> arena, float timeDelta)
     {
@@ -99,13 +93,6 @@ public class Ant : ISimulationAgent<AntState>
         if (_mode == Mode.Forage) Forage(arena, sensedFoodWithDistanceOrientationSaliency, timeDelta);
     }
 
-    private void ResetSpeedAndTurningAngle()
-    {
-        if (Math.Abs(State.Speed - _initialSpeed) > 0.01f) State = State.WithData(speed: _initialSpeed);
-
-        if (Math.Abs(_maxTurningAngle - 0.1f) > 0.01f) _maxTurningAngle = 0.1f;
-    }
-
     public bool WithinSensoryField(float x1, float y1)
     {
         var dist = Geometry2D.EuclideanDistance(State.X, State.Y, x1, y1);
@@ -114,6 +101,13 @@ public class Ant : ISimulationAgent<AntState>
         var rawAbsDifference = Math.Abs(State.Orientation - orientationTowardsObject);
         var absRadiansDistance = Math.Min(TwoPi - rawAbsDifference, rawAbsDifference);
         return absRadiansDistance <= State.SensoryFieldAngelRadHalved;
+    }
+
+    private void ResetSpeedAndTurningAngle()
+    {
+        if (Math.Abs(State.Speed - _initialSpeed) > 0.01f) State = State.WithData(speed: _initialSpeed);
+
+        if (Math.Abs(_maxTurningAngle - 0.1f) > 0.01f) _maxTurningAngle = 0.1f;
     }
 
     private bool ShouldDepositFood(ISimulationArena<AntState> arena)
@@ -456,5 +450,11 @@ public class Ant : ISimulationAgent<AntState>
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    private enum Mode
+    {
+        Forage,
+        Return
     }
 }
