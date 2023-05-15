@@ -1,7 +1,6 @@
 # ANTS
 
-**ANTS** (**A**nt **N**utrition-**T**racking **S**imulation) is an ant-colony simulation written from scratch in **C#11
-** with **.NET 7** and using **Wpf** primitives for graphical presentation. It creates a simulated 2D-world where ants
+**ANTS** (**A**nt **N**utrition-**T**racking **S**imulation) is an ant-colony simulation written from scratch in **C#11** with **.NET 7** and using **Wpf** primitives for graphical presentation. It creates a simulated 2D-world where ants
 forage for food and return it to their nest.
 
 **NOTE:** This application deliberately avoids using a more design-oriented color scheme in order to improve
